@@ -27,7 +27,114 @@ function load() {
 let db = load();
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(db)); }
-  catch (e) { toast('Không lưu được — bộ nhớ trình duyệt bị chặn?'); }
+  catch (e) { if (!cloud.col) toast('Không lưu được — bộ nhớ trình duyệt bị chặn?'); }
+  syncDiff();
+}
+
+/* ---------------- Đồng bộ đám mây (khi mở trên claude.ai) ----------------
+   Mỗi người dùng có thư mục riêng data/users/<id>: 1 doc "settings" + 1 doc mỗi tháng "m-YYYY-MM". */
+const LOAD_TIME = Date.now();
+const cloud = { col: null, ready: false, synced: {}, dirty: new Set(), inflight: null, timer: null, status: 'local' };
+const settingsBody = () => ({ jars: db.jars.map(j => ({ id: j.id, pct: j.pct })), theme: db.theme || 'auto', lastBackup: db.lastBackup || null });
+function buckets() {
+  const b = { settings: JSON.stringify(settingsBody()) }, by = {};
+  for (const t of db.tx) (by['m-' + ym(t.date)] ||= []).push(t);
+  for (const k in by) b[k] = JSON.stringify({ tx: by[k] });
+  return b;
+}
+function syncDiff() {
+  if (!cloud.col || !cloud.ready) return;
+  const cur = buckets();
+  for (const k of new Set([...Object.keys(cur), ...Object.keys(cloud.synced)])) if (cur[k] !== cloud.synced[k]) cloud.dirty.add(k);
+  if (!cloud.dirty.size) return;
+  setSync('saving');
+  clearTimeout(cloud.timer); cloud.timer = setTimeout(flush, 400);
+}
+async function flush() {
+  if (cloud.inflight) return;
+  while (cloud.dirty.size) {
+    const k = cloud.dirty.values().next().value;
+    cloud.dirty.delete(k); cloud.inflight = k;
+    const body = buckets()[k];
+    try {
+      if (body) await cloud.col.doc(k).set(JSON.parse(body)); else await cloud.col.doc(k).delete();
+      if (body) cloud.synced[k] = body; else delete cloud.synced[k];
+    } catch (e) {
+      cloud.inflight = null; cloud.dirty.add(k); setSync('error');
+      if (e?.code === 'quota_exceeded') toast('Hết dung lượng đồng bộ — hãy sao lưu và xoá bớt dữ liệu cũ');
+      else if (e?.code !== 'revoked' && e?.code !== 'invalid_argument') setTimeout(flush, 5000);
+      return;
+    }
+    cloud.inflight = null;
+  }
+  setSync('ok');
+}
+function setSync(s) {
+  cloud.status = s;
+  const el = $('#syncBadge'); if (el) el.outerHTML = syncBadge();
+}
+function syncBadge() {
+  const m = { local: ['📱', 'Chỉ lưu trên máy này'], saving: ['⏳', 'Đang đồng bộ…'], ok: ['☁️', 'Đã đồng bộ'], error: ['⚠️', 'Chưa đồng bộ được, sẽ thử lại'] }[cloud.status];
+  return `<span id="syncBadge" class="sync" title="${m[1]}" aria-label="${m[1]}">${m[0]}</span>`;
+}
+async function initCloud() {
+  const c = window.claude?.use;
+  if (!c) return;
+  try {
+    const [store, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+    const id = store && user ? await user.id() : null;
+    if (!id) return;
+    cloud.col = store.collection('data/users/' + id);
+    cloud.col.onSnapshot(onRemote, () => setSync('error'));
+  } catch (e) { /* chạy ở chế độ chỉ lưu trên máy */ }
+}
+function onRemote(snap) {
+  const remote = {};
+  for (const d of snap.docs) remote[d.id] = d.data();
+  if (!cloud.ready) {
+    if (snap.metadata.fromCache && snap.empty) return; // đợi kết quả chính thức
+    cloud.ready = true;
+    // Giữ các giao dịch vừa ghi trên máy trước khi kết nối xong (hoặc dữ liệu cũ khi đám mây còn trống)
+    const keepLocal = snap.empty ? db.tx : db.tx.filter(t => (t.created || 0) >= LOAD_TIME);
+    applyRemote(remote, keepLocal);
+    cloud.synced = {};
+    for (const k in remote) cloud.synced[k] = JSON.stringify(remote[k]);
+    syncDiff(); if (!cloud.dirty.size) setSync('ok');
+    return;
+  }
+  if (snap.metadata.hasPendingWrites) return; // tiếng vọng từ chính lần ghi của máy này
+  const busy = new Set([...cloud.dirty, cloud.inflight].filter(Boolean));
+  for (const k in remote) if (!busy.has(k)) cloud.synced[k] = JSON.stringify(remote[k]);
+  for (const k of Object.keys(cloud.synced)) if (!(k in remote) && !busy.has(k)) delete cloud.synced[k];
+  const localBusy = db.tx.filter(t => busy.has('m-' + ym(t.date)));
+  const r = {}; for (const k in remote) if (!busy.has(k)) r[k] = remote[k];
+  if (busy.has('settings')) delete r.settings;
+  applyRemote(r, localBusy);
+}
+function applyRemote(remote, extraTx) {
+  const tx = [], seen = new Set();
+  for (const k in remote) if (k.startsWith('m-')) for (const t of remote[k].tx || []) if (!seen.has(t.id)) { seen.add(t.id); tx.push(t); }
+  for (const t of extraTx) if (!seen.has(t.id)) { seen.add(t.id); tx.push(t); }
+  db.tx = tx;
+  const s = remote.settings;
+  if (s) {
+    for (const j of db.jars) { const p = s.jars?.find(x => x.id === j.id)?.pct; if (typeof p === 'number') j.pct = p; }
+    db.theme = s.theme || 'auto'; db.lastBackup = s.lastBackup || db.lastBackup; applyTheme();
+  }
+  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { /* bỏ qua */ }
+  renderAll();
+  if (sh.open) renderSheet();
+}
+
+/* Hộp xác nhận trong trang (thay cho confirm()) */
+function ask(msg, yes = 'Đồng ý') {
+  return new Promise(res => {
+    const d = $('#dialog');
+    $('#dlgMsg').textContent = msg; $('#dlgYes').textContent = yes; d.hidden = false;
+    const done = v => { d.hidden = true; res(v); };
+    $('#dlgYes').onclick = () => done(true);
+    $('#dlgNo').onclick = () => done(false);
+  });
 }
 
 /* ---------------- Helpers ---------------- */
@@ -189,7 +296,7 @@ function renderHome() {
   $('#view-home').innerHTML = `
     <div class="top">
       <div><div class="muted" style="font-size:13px">${hi}</div><h1>Sổ 6 Lọ</h1></div>
-      <span class="streak" title="Số ngày liên tiếp có ghi chép">🔥 ${st} ngày</span>
+      <span class="streak" title="Số ngày liên tiếp có ghi chép">🔥 ${st} ngày ${syncBadge()}</span>
     </div>
     <div class="card summary">
       <div class="label">Tổng tiền trong các lọ</div>
@@ -386,7 +493,7 @@ function renderSettings() {
 
     <h2>Dữ liệu</h2>
     <div class="card">
-      <p class="muted" style="margin:0 0 10px;font-size:13.5px">Dữ liệu chỉ lưu trên trình duyệt của máy này (${db.tx.length} giao dịch). Hãy sao lưu định kỳ.</p>
+      <p class="muted" style="margin:0 0 10px;font-size:13.5px">${cloud.col ? `☁️ Dữ liệu được đồng bộ theo tài khoản claude.ai của bạn — mở link này trên máy khác là thấy ngay (${db.tx.length} giao dịch).` : `📱 Dữ liệu chỉ lưu trên trình duyệt của máy này (${db.tx.length} giao dịch).`} Vẫn nên sao lưu định kỳ.</p>
       <div class="btn-row">
         <button class="btn primary" id="exportJson">💾 Sao lưu (.json)</button>
         <button class="btn ghost" id="importJson">📂 Khôi phục</button>
@@ -417,8 +524,9 @@ function renderSettings() {
   $('#pctReset').onclick = () => { db.jars.forEach(j => j.pct = DEFAULT_JARS.find(d => d.id === j.id).pct); save(); renderSettings(); };
   const ts = $('#themeSel'); ts.value = db.theme || 'auto';
   ts.onchange = () => { db.theme = ts.value; save(); applyTheme(); };
-  $('#exportJson').onclick = () => {
-    download(`sothuchi-${today()}.json`, JSON.stringify({ app: 'sothuchi', version: 1, ...db }, null, 1), 'application/json');
+  $('#exportJson').onclick = async () => {
+    try { await download(`sothuchi-${today()}.json`, JSON.stringify({ app: 'sothuchi', version: 1, ...db }, null, 1), 'application/json'); }
+    catch (e) { return; }
     db.lastBackup = Date.now(); save();
   };
   $('#exportCsv').onclick = () => {
@@ -435,19 +543,27 @@ function renderSettings() {
     try {
       const d = JSON.parse(await f.text());
       if (!Array.isArray(d.tx)) throw 0;
-      if (!confirm(`Khôi phục ${d.tx.length} giao dịch? Dữ liệu hiện tại sẽ bị thay thế.`)) return;
-      localStorage.setItem(KEY, JSON.stringify(d)); db = load(); save(); applyTheme(); renderAll();
+      if (!await ask(`Khôi phục ${d.tx.length} giao dịch? Dữ liệu hiện tại sẽ bị thay thế.`, 'Khôi phục')) return;
+      db.tx = d.tx;
+      for (const j of db.jars) { const p = d.jars?.find(x => x.id === j.id)?.pct; if (typeof p === 'number') j.pct = p; }
+      save(); applyTheme(); renderAll();
       toast('Đã khôi phục dữ liệu');
     } catch { toast('File không hợp lệ'); }
     e.target.value = '';
   };
-  $('#wipe').onclick = () => {
-    if (!confirm('Xoá TOÀN BỘ giao dịch? Không thể hoàn tác.')) return;
+  $('#wipe').onclick = async () => {
+    if (!await ask('Xoá TOÀN BỘ giao dịch? Không thể hoàn tác.', 'Xoá hết')) return;
     db.tx = []; save(); renderAll(); toast('Đã xoá dữ liệu');
   };
 }
 
-function download(name, text, type) {
+async function download(name, text, type) {
+  const dl = window.claude?.use ? await window.claude.use('downloads').catch(() => null) : null;
+  if (dl) {
+    try { await dl.save({ filename: name, data: text }); }
+    catch (e) { if (e?.code !== 'declined') toast('Không tải xuống được file'); throw e; }
+    return;
+  }
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text], { type }));
   a.download = name; a.click();
@@ -652,7 +768,8 @@ function init() {
   renderAll();
   if (p) openSheet({ type: p });
 
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  initCloud();
+  if (!window.claude && 'serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
   // Làm mới khi quay lại app qua ngày mới

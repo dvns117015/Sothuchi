@@ -1,0 +1,1171 @@
+<title>Sổ Thu Chi 6 Lọ</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f3ef;
+  --surface: #fcfcfb;
+  --surface-2: #efeee9;
+  --line: #e2e1dc;
+  --text: #0b0b0b;
+  --text-2: #52514e;
+  --text-3: #85847f;
+  --accent: #2a78d6;
+  --good: #0f8a4a;
+  --bad: #d23b3a;
+  --warn: #b26b00;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.06);
+  --j-nec: #2a78d6; --j-ffa: #eb6834; --j-edu: #1baf7a;
+  --j-ltss: #eda100; --j-play: #e87ba4; --j-give: #008300;
+  --radius: 18px;
+  --tabbar-h: 68px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111110; --surface: #1a1a19; --surface-2: #252523; --line: #33332f;
+    --text: #ffffff; --text-2: #c3c2b7; --text-3: #8d8c84;
+    --accent: #3987e5; --good: #3dbb74; --bad: #ef6b6a; --warn: #e0a028;
+    --shadow: 0 1px 2px rgba(0,0,0,.4);
+    --j-nec: #3987e5; --j-ffa: #d95926; --j-edu: #199e70;
+    --j-ltss: #c98500; --j-play: #d55181; --j-give: #008300;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111110; --surface: #1a1a19; --surface-2: #252523; --line: #33332f;
+  --text: #ffffff; --text-2: #c3c2b7; --text-3: #8d8c84;
+  --accent: #3987e5; --good: #3dbb74; --bad: #ef6b6a; --warn: #e0a028;
+  --shadow: 0 1px 2px rgba(0,0,0,.4);
+  --j-nec: #3987e5; --j-ffa: #d95926; --j-edu: #199e70;
+  --j-ltss: #c98500; --j-play: #d55181; --j-give: #008300;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+input, select { font: inherit; color: inherit; }
+
+#app {
+  max-width: 560px; margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 16px) 16px calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 24px);
+}
+.view { display: none; }
+.view.active { display: block; animation: fade .18s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+h1 { font-size: 22px; margin: 0; letter-spacing: -.01em; }
+h2 { font-size: 15px; margin: 22px 0 10px; color: var(--text-2); font-weight: 600; }
+.muted { color: var(--text-3); }
+.num { font-variant-numeric: tabular-nums; }
+.pos { color: var(--good); }
+.neg { color: var(--bad); }
+
+.card {
+  background: var(--surface); border-radius: var(--radius); padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+/* ---------- Header ---------- */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.streak {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface); padding: 6px 12px; border-radius: 999px;
+  box-shadow: var(--shadow); font-weight: 600; font-size: 14px; white-space: nowrap;
+}
+
+/* ---------- Summary ---------- */
+.summary .label { font-size: 13px; color: var(--text-2); }
+.summary .big { font-size: 30px; font-weight: 700; letter-spacing: -.02em; margin: 2px 0 12px; }
+.summary .row { display: flex; gap: 10px; }
+.summary .row > div { flex: 1; background: var(--surface-2); border-radius: 12px; padding: 8px 12px; }
+.summary .row b { display: block; font-size: 16px; }
+.bar-split { display: flex; height: 8px; border-radius: 99px; overflow: hidden; margin-top: 12px; gap: 2px; background: var(--surface-2); }
+.bar-split > i { display: block; height: 100%; }
+
+/* ---------- Nudge ---------- */
+.nudge {
+  margin-top: 14px; padding: 12px 14px; border-radius: 14px;
+  background: color-mix(in oklab, var(--accent) 12%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, transparent);
+  font-size: 14px;
+}
+.nudge b { display: block; margin-bottom: 2px; }
+
+/* ---------- Quick add ---------- */
+.quick { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
+.quick::-webkit-scrollbar { display: none; }
+.qbtn {
+  flex: 0 0 auto; background: var(--surface); border-radius: 14px; padding: 10px 14px;
+  box-shadow: var(--shadow); text-align: left; min-width: 104px;
+  border-left: 4px solid var(--c, var(--accent));
+  transition: transform .1s;
+}
+.qbtn:active { transform: scale(.96); }
+.qbtn .n { font-weight: 600; font-size: 14px; display: block; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+.qbtn .a { font-size: 13px; color: var(--text-2); }
+
+/* ---------- Jars ---------- */
+.jars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+@media (max-width: 360px) { .jars { grid-template-columns: repeat(2, 1fr); } }
+.jar {
+  background: var(--surface); border-radius: var(--radius); padding: 12px 8px 12px;
+  box-shadow: var(--shadow); text-align: center; position: relative;
+  transition: transform .12s;
+}
+.jar:active { transform: scale(.96); }
+.jar svg { width: 64px; height: 76px; display: block; margin: 0 auto 6px; }
+.jar .jn { font-size: 12.5px; font-weight: 600; line-height: 1.2; min-height: 2.4em; display: flex; align-items: center; justify-content: center; }
+.jar .jb { font-size: 15px; font-weight: 700; margin-top: 2px; }
+.jar .js { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+.jar .tag {
+  position: absolute; top: 8px; right: 8px; font-size: 10px; font-weight: 700;
+  padding: 1px 6px; border-radius: 99px; background: var(--surface-2); color: var(--text-2);
+}
+.jar.low .tag { background: color-mix(in oklab, var(--warn) 20%, var(--surface)); color: var(--warn); }
+.jar.empty .tag { background: color-mix(in oklab, var(--bad) 18%, var(--surface)); color: var(--bad); }
+.jar .wave { animation: wave 3.5s ease-in-out infinite alternate; }
+@keyframes wave { from { transform: translateX(-6px); } to { transform: translateX(6px); } }
+@media (prefers-reduced-motion: reduce) { .jar .wave, .view.active { animation: none; } }
+
+/* ---------- Lists ---------- */
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.month-nav { display: flex; align-items: center; gap: 4px; background: var(--surface); border-radius: 999px; box-shadow: var(--shadow); padding: 4px; }
+.month-nav button { width: 34px; height: 34px; border-radius: 50%; font-size: 18px; }
+.month-nav button:active { background: var(--surface-2); }
+.month-nav span { min-width: 92px; text-align: center; font-weight: 600; font-size: 14px; }
+.filters { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 2px; scrollbar-width: none; }
+.filters::-webkit-scrollbar { display: none; }
+.fchip {
+  flex: 0 0 auto; padding: 6px 12px; border-radius: 999px; background: var(--surface);
+  border: 1px solid var(--line); font-size: 13px; white-space: nowrap;
+}
+.fchip.on { background: var(--text); color: var(--surface); border-color: var(--text); }
+.search { width: 100%; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); margin-bottom: 10px; }
+
+.day { margin-bottom: 14px; }
+.day-h { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-2); padding: 0 4px 6px; font-weight: 600; }
+.txl { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+.tx { display: flex; align-items: center; gap: 12px; padding: 11px 14px; width: 100%; text-align: left; }
+.tx + .tx { border-top: 1px solid var(--line); }
+.tx:active { background: var(--surface-2); }
+.tx .ic {
+  width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; flex: 0 0 auto;
+  background: color-mix(in oklab, var(--c) 18%, var(--surface)); font-size: 18px;
+}
+.tx .mid { flex: 1; min-width: 0; }
+.tx .t1 { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx .t2 { font-size: 12.5px; color: var(--text-3); }
+.tx .amt { font-weight: 700; white-space: nowrap; }
+.empty-state { text-align: center; padding: 40px 16px; color: var(--text-3); }
+.empty-state .e { font-size: 40px; }
+
+/* ---------- Stats ---------- */
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.kpi { background: var(--surface); border-radius: 14px; padding: 10px 12px; box-shadow: var(--shadow); }
+.kpi .l { font-size: 12px; color: var(--text-2); }
+.kpi .v { font-size: 16px; font-weight: 700; margin-top: 2px; }
+.budget { display: grid; gap: 14px; }
+.brow .bh { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; }
+.brow .bh .nm { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.brow .bh .nm i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); display: inline-block; }
+.brow .track { height: 10px; background: var(--surface-2); border-radius: 99px; margin-top: 6px; overflow: hidden; position: relative; }
+.brow .track > b { display: block; height: 100%; background: var(--c); border-radius: 99px; transition: width .4s; }
+.brow.over .track > b { background: repeating-linear-gradient(45deg, var(--bad) 0 6px, color-mix(in oklab, var(--bad) 70%, var(--surface)) 6px 10px); }
+.brow .bs { font-size: 12px; color: var(--text-3); margin-top: 3px; display: flex; justify-content: space-between; }
+.chart { position: relative; }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart .axis { font-size: 10.5px; fill: var(--text-3); }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--text-2); margin-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.tip {
+  position: absolute; pointer-events: none; background: var(--text); color: var(--surface);
+  font-size: 12px; padding: 6px 9px; border-radius: 8px; white-space: nowrap; transform: translate(-50%, -110%);
+  opacity: 0; transition: opacity .1s; z-index: 5;
+}
+.tip.show { opacity: 1; }
+.compare { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.compare th, .compare td { padding: 7px 4px; text-align: right; border-bottom: 1px solid var(--line); }
+.compare th:first-child, .compare td:first-child { text-align: left; }
+.compare th { font-weight: 600; color: var(--text-2); font-size: 12px; }
+
+/* ---------- Settings ---------- */
+.set-jar { display: grid; grid-template-columns: 28px 1fr 84px; align-items: center; gap: 10px; padding: 8px 0; }
+.set-jar + .set-jar { border-top: 1px solid var(--line); }
+.set-jar .em { font-size: 22px; }
+.set-jar .nm { font-weight: 600; font-size: 14px; }
+.set-jar .ds { font-size: 12px; color: var(--text-3); }
+.pct { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+.pct input { width: 100%; border: 0; background: transparent; padding: 8px; text-align: right; font-weight: 600; }
+.pct span { padding-right: 8px; color: var(--text-3); }
+.pct-total { margin-top: 10px; font-weight: 600; font-size: 14px; }
+.set-list .item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; }
+.set-list .item + .item { border-top: 1px solid var(--line); }
+.set-list select { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); }
+.btn {
+  padding: 12px 18px; border-radius: 14px; font-weight: 600; background: var(--surface-2);
+}
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.ghost { background: transparent; border: 1px solid var(--line); }
+.btn.danger { color: var(--bad); }
+.btn:active { transform: scale(.98); }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.rules { margin: 0; padding-left: 18px; color: var(--text-2); font-size: 13.5px; }
+.rules li { margin: 4px 0; }
+
+/* ---------- Tab bar ---------- */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  display: flex; justify-content: center; align-items: center;
+  background: color-mix(in oklab, var(--surface) 88%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line);
+}
+.tab {
+  flex: 1; max-width: 100px; display: flex; flex-direction: column; align-items: center;
+  font-size: 11px; color: var(--text-3); gap: 1px; padding: 6px 0;
+}
+.tab .ti { font-size: 20px; filter: grayscale(1); opacity: .7; }
+.tab.active { color: var(--text); font-weight: 600; }
+.tab.active .ti { filter: none; opacity: 1; }
+.fab {
+  width: 60px; height: 60px; border-radius: 50%; margin: -26px 10px 0;
+  background: var(--accent); color: #fff; font-size: 32px; line-height: 1;
+  box-shadow: 0 6px 20px color-mix(in oklab, var(--accent) 45%, transparent);
+  flex: 0 0 auto; transition: transform .12s;
+}
+.fab:active { transform: scale(.92); }
+
+/* ---------- Sheet ---------- */
+.backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 30; animation: fade .15s; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 31;
+  max-width: 560px; margin: 0 auto; max-height: 96dvh; overflow-y: auto;
+  background: var(--surface); border-radius: 22px 22px 0 0;
+  padding: 8px 16px calc(14px + env(safe-area-inset-bottom));
+  animation: up .2s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes up { from { transform: translateY(40%); opacity: .4; } to { transform: none; opacity: 1; } }
+.grab { width: 40px; height: 5px; border-radius: 9px; background: var(--line); margin: 0 auto 10px; }
+.seg { display: flex; background: var(--surface-2); border-radius: 12px; padding: 3px; }
+.seg button { flex: 1; padding: 8px 4px; border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--text-2); }
+.seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.seg button.on[data-type="out"] { color: var(--bad); }
+.seg button.on[data-type="in"] { color: var(--good); }
+.amount { text-align: center; font-size: 40px; font-weight: 700; letter-spacing: -.02em; margin: 10px 0 4px; font-variant-numeric: tabular-nums; }
+.amount .cur { font-size: 22px; color: var(--text-3); margin-left: 4px; }
+.amount.out { color: var(--bad); }
+.amount.in { color: var(--good); }
+.quick-amts { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+.quick-amts button { padding: 5px 10px; border-radius: 999px; background: var(--surface-2); font-size: 13px; font-weight: 600; }
+.jar-pick { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.jar-pick button {
+  padding: 8px 2px 6px; border-radius: 12px; border: 2px solid transparent;
+  background: color-mix(in oklab, var(--c) 12%, var(--surface)); font-size: 11px; font-weight: 600;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.15;
+}
+.jar-pick button .e { font-size: 20px; }
+.jar-pick button .b { font-weight: 500; color: var(--text-3); font-size: 10px; }
+.jar-pick button.on { border-color: var(--c); background: color-mix(in oklab, var(--c) 24%, var(--surface)); }
+.jar-pick.small button { padding: 6px 2px; }
+.jar-pick.small button .e { font-size: 16px; }
+.move-row { display: grid; grid-template-columns: 38px 1fr; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 13px; color: var(--text-2); font-weight: 600; }
+.switch { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.switch input { width: 18px; height: 18px; accent-color: var(--accent); }
+.split-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.split-preview div { background: color-mix(in oklab, var(--c) 12%, var(--surface)); border-radius: 10px; padding: 6px 8px; font-size: 12px; border-left: 3px solid var(--c); }
+.split-preview b { display: block; font-size: 13px; }
+.note-row { display: flex; gap: 8px; margin-top: 10px; }
+.note-row input { padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); min-width: 0; }
+#noteInput { flex: 1; }
+#dateInput { flex: 0 0 136px; }
+.chips { display: flex; gap: 6px; overflow-x: auto; margin: 8px 0 4px; min-height: 30px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chips button { flex: 0 0 auto; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); font-size: 13px; }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
+.keypad button { padding: 13px 0; border-radius: 12px; background: var(--surface-2); font-size: 21px; font-weight: 600; }
+.keypad button:active { background: var(--line); }
+.sheet-actions { display: flex; gap: 8px; margin-top: 10px; }
+.sheet-actions .primary { flex: 1; padding: 15px; font-size: 16px; }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed; left: 16px; right: 16px; margin: 0 auto; width: fit-content; z-index: 40;
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 14px);
+  background: var(--text); color: var(--surface); padding: 11px 14px 11px 16px; border-radius: 14px;
+  display: flex; align-items: center; gap: 14px; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  max-width: calc(100% - 32px); animation: fade .15s;
+}
+.toast button { color: var(--accent); font-weight: 700; filter: brightness(1.3); }
+/* ---------- Dialog ---------- */
+.dialog { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.4); display: grid; place-items: center; padding: 16px; animation: fade .15s; }
+.dbox { background: var(--surface); border-radius: var(--radius); padding: 20px; max-width: 360px; width: 100%; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+.dbox p { margin: 0 0 16px; font-size: 15px; font-weight: 600; }
+.dbox .btn-row { justify-content: flex-end; }
+.sync { font-size: 13px; margin-left: 2px; }
+.btn:focus-visible, .tab:focus-visible, .fab:focus-visible, .jar:focus-visible, .qbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+</style>
+<main id="app">
+    <section id="view-home" class="view active" aria-label="Tổng quan"></section>
+    <section id="view-history" class="view" aria-label="Lịch sử"></section>
+    <section id="view-stats" class="view" aria-label="Thống kê"></section>
+    <section id="view-settings" class="view" aria-label="Cài đặt"></section>
+  </main>
+
+  <nav class="tabbar" aria-label="Điều hướng">
+    <button class="tab active" data-view="home"><span class="ti">🏺</span><span>Lọ</span></button>
+    <button class="tab" data-view="history"><span class="ti">📒</span><span>Sổ</span></button>
+    <button class="fab" id="fab" aria-label="Ghi giao dịch">＋</button>
+    <button class="tab" data-view="stats"><span class="ti">📊</span><span>Thống kê</span></button>
+    <button class="tab" data-view="settings"><span class="ti">⚙️</span><span>Cài đặt</span></button>
+  </nav>
+
+  <!-- Bottom sheet: thêm / sửa giao dịch -->
+  <div class="backdrop" id="backdrop" hidden></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Ghi giao dịch" hidden>
+    <div class="grab"></div>
+    <div class="seg" id="typeSeg">
+      <button data-type="out" class="on">Chi tiêu</button>
+      <button data-type="in">Thu nhập</button>
+      <button data-type="move">Chuyển lọ</button>
+    </div>
+
+    <div class="amount" id="amountBox">
+      <span id="amountText">0</span><span class="cur">đ</span>
+    </div>
+    <div class="quick-amts" id="quickAmts"></div>
+
+    <div id="paneOut" class="pane">
+      <div class="jar-pick" id="jarPick"></div>
+    </div>
+    <div id="paneIn" class="pane" hidden>
+      <label class="switch"><input type="checkbox" id="splitAll" checked> <span>Tự chia vào 6 lọ theo tỉ lệ</span></label>
+      <div id="splitPreview" class="split-preview"></div>
+      <div class="jar-pick" id="jarPickIn" hidden></div>
+    </div>
+    <div id="paneMove" class="pane" hidden>
+      <div class="move-row"><span>Từ</span><div class="jar-pick small" id="jarFrom"></div></div>
+      <div class="move-row"><span>Sang</span><div class="jar-pick small" id="jarTo"></div></div>
+    </div>
+
+    <div class="note-row">
+      <input id="noteInput" type="text" placeholder="Ghi chú (vd: cà phê, lương…)" autocomplete="off" enterkeyhint="done">
+      <input id="dateInput" type="date" aria-label="Ngày">
+    </div>
+    <div class="chips" id="noteChips"></div>
+
+    <div class="keypad" id="keypad">
+      <button>1</button><button>2</button><button>3</button>
+      <button>4</button><button>5</button><button>6</button>
+      <button>7</button><button>8</button><button>9</button>
+      <button>000</button><button>0</button><button data-k="del" aria-label="Xoá">⌫</button>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn ghost danger" id="btnDelete" hidden>Xoá</button>
+      <button class="btn primary" id="btnSave">Lưu</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <div class="dialog" id="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dlgMsg" hidden>
+    <div class="dbox">
+      <p id="dlgMsg"></p>
+      <div class="btn-row"><button class="btn ghost" id="dlgNo">Huỷ</button><button class="btn primary danger-fill" id="dlgYes">Đồng ý</button></div>
+    </div>
+  </div>
+
+  <script>
+/* Sổ Thu Chi 6 Lọ — vanilla JS, dữ liệu lưu trên máy (localStorage). */
+'use strict';
+
+const KEY = 'sothuchi.v1';
+
+const DEFAULT_JARS = [
+  { id: 'nec',  short: 'NEC',  name: 'Thiết yếu',        emoji: '🏠', pct: 55, desc: 'Ăn uống, nhà, đi lại, hoá đơn' },
+  { id: 'ffa',  short: 'FFA',  name: 'Tự do tài chính',  emoji: '💰', pct: 10, desc: 'Đầu tư sinh lời — không tiêu' },
+  { id: 'edu',  short: 'EDU',  name: 'Giáo dục',         emoji: '📚', pct: 10, desc: 'Sách, khoá học, phát triển bản thân' },
+  { id: 'ltss', short: 'LTSS', name: 'Tiết kiệm dài hạn', emoji: '🏦', pct: 10, desc: 'Mục tiêu lớn, quỹ dự phòng' },
+  { id: 'play', short: 'PLAY', name: 'Hưởng thụ',        emoji: '🎉', pct: 10, desc: 'Vui chơi, tự thưởng — tiêu hết mỗi tháng' },
+  { id: 'give', short: 'GIVE', name: 'Cho đi',           emoji: '❤️', pct: 5,  desc: 'Từ thiện, quà tặng, giúp đỡ' },
+];
+const PROTECTED = new Set(['ffa', 'ltss']); // lọ không nên tiêu
+
+/* ---------------- Storage ---------------- */
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d && Array.isArray(d.tx)) {
+      d.jars = DEFAULT_JARS.map(j => ({ ...j, pct: (d.jars || []).find(x => x.id === j.id)?.pct ?? j.pct }));
+      return d;
+    }
+  } catch (e) { /* bỏ qua dữ liệu hỏng */ }
+  return { jars: DEFAULT_JARS.map(j => ({ ...j })), tx: [], theme: 'auto', lastBackup: null };
+}
+let db = load();
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(db)); }
+  catch (e) { if (!cloud.col) toast('Không lưu được — bộ nhớ trình duyệt bị chặn?'); }
+  syncDiff();
+}
+
+/* ---------------- Đồng bộ đám mây (khi mở trên claude.ai) ----------------
+   Mỗi người dùng có thư mục riêng data/users/<id>: 1 doc "settings" + 1 doc mỗi tháng "m-YYYY-MM". */
+const LOAD_TIME = Date.now();
+const cloud = { col: null, ready: false, synced: {}, dirty: new Set(), inflight: null, timer: null, status: 'local' };
+const settingsBody = () => ({ jars: db.jars.map(j => ({ id: j.id, pct: j.pct })), theme: db.theme || 'auto', lastBackup: db.lastBackup || null });
+function buckets() {
+  const b = { settings: JSON.stringify(settingsBody()) }, by = {};
+  for (const t of db.tx) (by['m-' + ym(t.date)] ||= []).push(t);
+  for (const k in by) b[k] = JSON.stringify({ tx: by[k] });
+  return b;
+}
+function syncDiff() {
+  if (!cloud.col || !cloud.ready) return;
+  const cur = buckets();
+  for (const k of new Set([...Object.keys(cur), ...Object.keys(cloud.synced)])) if (cur[k] !== cloud.synced[k]) cloud.dirty.add(k);
+  if (!cloud.dirty.size) return;
+  setSync('saving');
+  clearTimeout(cloud.timer); cloud.timer = setTimeout(flush, 400);
+}
+async function flush() {
+  if (cloud.inflight) return;
+  while (cloud.dirty.size) {
+    const k = cloud.dirty.values().next().value;
+    cloud.dirty.delete(k); cloud.inflight = k;
+    const body = buckets()[k];
+    try {
+      if (body) await cloud.col.doc(k).set(JSON.parse(body)); else await cloud.col.doc(k).delete();
+      if (body) cloud.synced[k] = body; else delete cloud.synced[k];
+    } catch (e) {
+      cloud.inflight = null; cloud.dirty.add(k); setSync('error');
+      if (e?.code === 'quota_exceeded') toast('Hết dung lượng đồng bộ — hãy sao lưu và xoá bớt dữ liệu cũ');
+      else if (e?.code !== 'revoked' && e?.code !== 'invalid_argument') setTimeout(flush, 5000);
+      return;
+    }
+    cloud.inflight = null;
+  }
+  setSync('ok');
+}
+function setSync(s) {
+  cloud.status = s;
+  const el = $('#syncBadge'); if (el) el.outerHTML = syncBadge();
+}
+function syncBadge() {
+  const m = { local: ['📱', 'Chỉ lưu trên máy này'], saving: ['⏳', 'Đang đồng bộ…'], ok: ['☁️', 'Đã đồng bộ'], error: ['⚠️', 'Chưa đồng bộ được, sẽ thử lại'] }[cloud.status];
+  return `<span id="syncBadge" class="sync" title="${m[1]}" aria-label="${m[1]}">${m[0]}</span>`;
+}
+async function initCloud() {
+  const c = window.claude?.use;
+  if (!c) return;
+  try {
+    const [store, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+    const id = store && user ? await user.id() : null;
+    if (!id) return;
+    cloud.col = store.collection('data/users/' + id);
+    cloud.col.onSnapshot(onRemote, () => setSync('error'));
+  } catch (e) { /* chạy ở chế độ chỉ lưu trên máy */ }
+}
+function onRemote(snap) {
+  const remote = {};
+  for (const d of snap.docs) remote[d.id] = d.data();
+  if (!cloud.ready) {
+    if (snap.metadata.fromCache && snap.empty) return; // đợi kết quả chính thức
+    cloud.ready = true;
+    // Giữ các giao dịch vừa ghi trên máy trước khi kết nối xong (hoặc dữ liệu cũ khi đám mây còn trống)
+    const keepLocal = snap.empty ? db.tx : db.tx.filter(t => (t.created || 0) >= LOAD_TIME);
+    applyRemote(remote, keepLocal);
+    cloud.synced = {};
+    for (const k in remote) cloud.synced[k] = JSON.stringify(remote[k]);
+    syncDiff(); if (!cloud.dirty.size) setSync('ok');
+    return;
+  }
+  if (snap.metadata.hasPendingWrites) return; // tiếng vọng từ chính lần ghi của máy này
+  const busy = new Set([...cloud.dirty, cloud.inflight].filter(Boolean));
+  for (const k in remote) if (!busy.has(k)) cloud.synced[k] = JSON.stringify(remote[k]);
+  for (const k of Object.keys(cloud.synced)) if (!(k in remote) && !busy.has(k)) delete cloud.synced[k];
+  const localBusy = db.tx.filter(t => busy.has('m-' + ym(t.date)));
+  const r = {}; for (const k in remote) if (!busy.has(k)) r[k] = remote[k];
+  if (busy.has('settings')) delete r.settings;
+  applyRemote(r, localBusy);
+}
+function applyRemote(remote, extraTx) {
+  const tx = [], seen = new Set();
+  for (const k in remote) if (k.startsWith('m-')) for (const t of remote[k].tx || []) if (!seen.has(t.id)) { seen.add(t.id); tx.push(t); }
+  for (const t of extraTx) if (!seen.has(t.id)) { seen.add(t.id); tx.push(t); }
+  db.tx = tx;
+  const s = remote.settings;
+  if (s) {
+    for (const j of db.jars) { const p = s.jars?.find(x => x.id === j.id)?.pct; if (typeof p === 'number') j.pct = p; }
+    db.theme = s.theme || 'auto'; db.lastBackup = s.lastBackup || db.lastBackup; applyTheme();
+  }
+  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { /* bỏ qua */ }
+  renderAll();
+  if (sh.open) renderSheet();
+}
+
+/* Hộp xác nhận trong trang (thay cho confirm()) */
+function ask(msg, yes = 'Đồng ý') {
+  return new Promise(res => {
+    const d = $('#dialog');
+    $('#dlgMsg').textContent = msg; $('#dlgYes').textContent = yes; d.hidden = false;
+    const done = v => { d.hidden = true; res(v); };
+    $('#dlgYes').onclick = () => done(true);
+    $('#dlgNo').onclick = () => done(false);
+  });
+}
+
+/* ---------------- Helpers ---------------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const nf = new Intl.NumberFormat('vi-VN');
+const money = n => nf.format(Math.round(n)) + 'đ';
+function short(n) {
+  const a = Math.abs(n), s = n < 0 ? '−' : '';
+  if (a >= 1e9) return s + trim(a / 1e9) + ' tỷ';
+  if (a >= 1e6) return s + trim(a / 1e6) + 'tr';
+  if (a >= 1e3) return s + trim(a / 1e3) + 'k';
+  return s + a;
+}
+const trim = x => (Math.round(x * 10) / 10).toString().replace('.', ',');
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const today = () => ymd(new Date());
+const ym = s => s.slice(0, 7);
+const jarById = id => db.jars.find(j => j.id === id);
+const jarColor = id => `var(--j-${id})`;
+function monthLabel(key) { const [y, m] = key.split('-'); return `Tháng ${+m}/${y}`; }
+function shiftMonth(key, d) { const [y, m] = key.split('-').map(Number); const t = new Date(y, m - 1 + d, 1); return ymd(t).slice(0, 7); }
+function dayLabel(s) {
+  const t = today(), y = ymd(new Date(Date.now() - 864e5));
+  if (s === t) return 'Hôm nay';
+  if (s === y) return 'Hôm qua';
+  const d = new Date(s + 'T00:00');
+  return ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][d.getDay()] + ', ' + d.getDate() + '/' + (d.getMonth() + 1);
+}
+
+/* ---------------- Domain ---------------- */
+function splitIncome(amount) {
+  const out = {}; let used = 0;
+  for (const j of db.jars) { out[j.id] = Math.floor(amount * j.pct / 100); used += out[j.id]; }
+  out.nec += amount - used; // phần lẻ vào lọ Thiết yếu
+  return out;
+}
+function delta(t, id) {
+  if (t.type === 'out') return t.jar === id ? -t.amount : 0;
+  if (t.type === 'in') return t.split?.[id] || 0;
+  if (t.type === 'move') return (t.to === id ? t.amount : 0) - (t.from === id ? t.amount : 0);
+  return 0;
+}
+function balances(untilMonth) {
+  const b = Object.fromEntries(db.jars.map(j => [j.id, 0]));
+  for (const t of db.tx) if (!untilMonth || ym(t.date) <= untilMonth) for (const j of db.jars) b[j.id] += delta(t, j.id);
+  return b;
+}
+function monthStats(key) {
+  const s = { income: 0, expense: 0, jars: {} };
+  for (const j of db.jars) s.jars[j.id] = { inflow: 0, spent: 0 };
+  for (const t of db.tx) {
+    if (ym(t.date) !== key) continue;
+    if (t.type === 'in') { s.income += t.amount; for (const id in t.split) s.jars[id] && (s.jars[id].inflow += t.split[id]); }
+    if (t.type === 'out') { s.expense += t.amount; s.jars[t.jar] && (s.jars[t.jar].spent += t.amount); }
+    if (t.type === 'move') { s.jars[t.to] && (s.jars[t.to].inflow += t.amount); s.jars[t.from] && (s.jars[t.from].inflow -= t.amount); }
+  }
+  return s;
+}
+function streak() {
+  const days = new Set(db.tx.map(t => t.date).concat(db.tx.map(t => t.created && ymd(new Date(t.created)))));
+  let d = new Date(), n = 0;
+  if (!days.has(ymd(d))) d.setDate(d.getDate() - 1);
+  while (days.has(ymd(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+/* Giao dịch hay dùng → nút ghi 1 chạm */
+function frequent(limit = 10) {
+  const m = new Map(), now = Date.now();
+  for (const t of db.tx) {
+    if (t.type !== 'out' || !t.note) continue;
+    const k = t.note.trim().toLowerCase() + '|' + t.jar + '|' + t.amount;
+    const age = (now - (t.created || now)) / 864e5;
+    const e = m.get(k) || { note: t.note.trim(), jar: t.jar, amount: t.amount, score: 0 };
+    e.score += 1 / (1 + age / 14);
+    m.set(k, e);
+  }
+  return [...m.values()].filter(e => e.score > 0.6).sort((a, b) => b.score - a.score).slice(0, limit);
+}
+/* Ghi chú đã dùng: note → {jar hay dùng, số tiền gần nhất} */
+function noteIndex(type) {
+  const m = new Map();
+  for (const t of [...db.tx].sort((a, b) => (a.created || 0) - (b.created || 0))) {
+    if (t.type !== type || !t.note) continue;
+    const k = t.note.trim().toLowerCase();
+    const e = m.get(k) || { note: t.note.trim(), jars: {}, count: 0, last: 0, amount: 0 };
+    e.count++; e.last = t.created || 0; e.amount = t.amount;
+    if (t.jar) e.jars[t.jar] = (e.jars[t.jar] || 0) + 1;
+    m.set(k, e);
+  }
+  for (const e of m.values()) e.jar = Object.entries(e.jars).sort((a, b) => b[1] - a[1])[0]?.[0];
+  return m;
+}
+function addTx(t) {
+  t.id = t.id || uid(); t.created = t.created || Date.now();
+  db.tx.push(t); save(); renderAll();
+  return t;
+}
+
+/* ---------------- Toast ---------------- */
+let toastTimer;
+function toast(msg, action, fn) {
+  const el = $('#toast');
+  el.innerHTML = `<span>${esc(msg)}</span>` + (action ? `<button>${esc(action)}</button>` : '');
+  el.hidden = false;
+  if (action) $('button', el).onclick = () => { el.hidden = true; fn(); };
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (el.hidden = true), action ? 5000 : 2500);
+}
+function undoableAdd(t, msg) {
+  const added = addTx(t);
+  toast(msg, 'Hoàn tác', () => { db.tx = db.tx.filter(x => x.id !== added.id); save(); renderAll(); });
+}
+
+/* ---------------- Jar SVG ---------------- */
+function jarSVG(id, fill) {
+  const f = Math.max(0, Math.min(1, fill));
+  const top = 22, bottom = 70, y = bottom - (bottom - top) * f;
+  const c = jarColor(id), cid = 'clip-' + id;
+  return `<svg viewBox="0 0 64 76" aria-hidden="true">
+    <defs><clipPath id="${cid}"><path d="M18 14h28v6c8 4 12 10 12 18v28a8 8 0 0 1-8 8H14a8 8 0 0 1-8-8V38c0-8 4-14 12-18z"/></clipPath></defs>
+    <g clip-path="url(#${cid})">
+      <rect x="0" y="0" width="64" height="76" fill="var(--surface-2)"/>
+      ${f > 0 ? `<g class="wave"><path d="M-10 ${y} q 9 -4 18 0 t 18 0 t 18 0 t 18 0 t 18 0 V 80 H -10 z" fill="${c}"/></g>
+      <rect x="0" y="${y + 3}" width="64" height="80" fill="${c}"/>` : ''}
+    </g>
+    <path d="M18 14h28v6c8 4 12 10 12 18v28a8 8 0 0 1-8 8H14a8 8 0 0 1-8-8V38c0-8 4-14 12-18z" fill="none" stroke="${c}" stroke-width="2"/>
+    <rect x="15" y="8" width="34" height="7" rx="3" fill="${c}"/>
+  </svg>`;
+}
+
+/* ---------------- Views ---------------- */
+let view = 'home';
+const histState = { month: today().slice(0, 7), jar: 'all', q: '' };
+let statsMonth = today().slice(0, 7);
+
+function renderHome() {
+  const key = today().slice(0, 7), bal = balances(), ms = monthStats(key);
+  const total = Object.values(bal).reduce((a, b) => a + b, 0);
+  const st = streak(), loggedToday = db.tx.some(t => t.date === today());
+  const freq = frequent();
+  const hour = new Date().getHours();
+  const hi = hour < 11 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
+
+  let nudge = '';
+  if (!db.tx.length) {
+    nudge = `<div class="nudge"><b>👋 Bắt đầu thôi!</b>Bấm <b style="display:inline">＋</b> → chọn <b style="display:inline">Thu nhập</b> và nhập lương tháng này. App sẽ tự chia vào 6 lọ.</div>`;
+  } else if (!loggedToday) {
+    nudge = `<div class="nudge"><b>${st ? `🔥 Giữ chuỗi ${st} ngày nhé!` : '✍️ Hôm nay chưa ghi gì'}</b>Chạm một nút bên dưới hoặc bấm vào lọ để ghi nhanh — mất 3 giây.</div>`;
+  } else if (db.tx.length >= 20 && (!db.lastBackup || Date.now() - db.lastBackup > 30 * 864e5)) {
+    nudge = `<div class="nudge"><b>💾 Đã lâu chưa sao lưu</b>Dữ liệu chỉ nằm trên máy này. <a href="#" data-go="settings">Sao lưu ngay</a></div>`;
+  }
+
+  const seg = db.jars.map(j => bal[j.id] > 0 ? `<i style="flex:${bal[j.id]};background:${jarColor(j.id)}" title="${esc(j.name)}"></i>` : '').join('');
+
+  $('#view-home').innerHTML = `
+    <div class="top">
+      <div><div class="muted" style="font-size:13px">${hi}</div><h1>Sổ 6 Lọ</h1></div>
+      <span class="streak" title="Số ngày liên tiếp có ghi chép">🔥 ${st} ngày ${syncBadge()}</span>
+    </div>
+    <div class="card summary">
+      <div class="label">Tổng tiền trong các lọ</div>
+      <div class="big num ${total < 0 ? 'neg' : ''}">${money(total)}</div>
+      <div class="row">
+        <div><span class="label">Thu ${monthLabel(key).toLowerCase()}</span><b class="num pos">+${short(ms.income)}</b></div>
+        <div><span class="label">Chi ${monthLabel(key).toLowerCase()}</span><b class="num neg">−${short(ms.expense)}</b></div>
+      </div>
+      ${total > 0 ? `<div class="bar-split" aria-hidden="true">${seg}</div>` : ''}
+    </div>
+    ${nudge}
+    ${freq.length ? `<h2>⚡ Ghi nhanh 1 chạm</h2><div class="quick">${freq.map((f, i) => `
+      <button class="qbtn" data-q="${i}" style="--c:${jarColor(f.jar)}"><span class="n">${esc(f.note)}</span><span class="a num">${short(f.amount)} · ${jarById(f.jar)?.short}</span></button>`).join('')}</div>` : ''}
+    <h2>Các lọ của bạn <span class="muted" style="font-weight:400">— chạm để ghi chi</span></h2>
+    <div class="jars">${db.jars.map(j => {
+      const b = bal[j.id], spent = ms.jars[j.id].spent;
+      const fill = b <= 0 ? 0 : spent > 0 ? b / (b + spent) : 1;
+      const cls = b < 0 || (b === 0 && db.tx.length) ? 'empty' : fill < 0.2 ? 'low' : '';
+      return `<button class="jar ${cls}" data-jar="${j.id}" aria-label="${esc(j.name)}: còn ${money(b)}">
+        <span class="tag">${j.pct}%</span>
+        ${jarSVG(j.id, fill)}
+        <div class="jn">${j.emoji} ${esc(j.name)}</div>
+        <div class="jb num ${b < 0 ? 'neg' : ''}">${short(b)}</div>
+        <div class="js num">${spent ? 'đã chi ' + short(spent) : '&nbsp;'}</div>
+      </button>`;
+    }).join('')}</div>
+  `;
+  $$('.qbtn', $('#view-home')).forEach(b => b.onclick = () => {
+    const f = freq[+b.dataset.q];
+    undoableAdd({ type: 'out', amount: f.amount, jar: f.jar, note: f.note, date: today() }, `Đã ghi ${f.note} −${short(f.amount)}`);
+  });
+  $$('.jar', $('#view-home')).forEach(b => b.onclick = () => openSheet({ type: 'out', jar: b.dataset.jar }));
+  $$('[data-go]', $('#view-home')).forEach(a => a.onclick = e => { e.preventDefault(); show(a.dataset.go); });
+}
+
+function txLine(t) {
+  let ic, t1, t2, amt, cls, c;
+  if (t.type === 'out') {
+    const j = jarById(t.jar); c = jarColor(t.jar);
+    ic = j?.emoji; t1 = t.note || j?.name; t2 = j?.name; amt = '−' + money(t.amount); cls = '';
+  } else if (t.type === 'in') {
+    c = 'var(--good)'; ic = '💵'; t1 = t.note || 'Thu nhập';
+    const ids = Object.keys(t.split || {}).filter(k => t.split[k]);
+    t2 = ids.length > 1 ? 'Chia vào ' + ids.length + ' lọ' : 'Vào lọ ' + (jarById(ids[0])?.name || '');
+    amt = '+' + money(t.amount); cls = 'pos';
+  } else {
+    c = 'var(--text-3)'; ic = '🔁'; t1 = t.note || 'Chuyển lọ';
+    t2 = `${jarById(t.from)?.short} → ${jarById(t.to)?.short}`; amt = money(t.amount); cls = 'muted';
+  }
+  return `<button class="tx" data-id="${t.id}" style="--c:${c}">
+    <span class="ic">${ic}</span>
+    <span class="mid"><span class="t1" style="display:block">${esc(t1)}</span><span class="t2">${esc(t2)}</span></span>
+    <span class="amt num ${cls}">${amt}</span></button>`;
+}
+
+function renderHistory() {
+  const s = histState, q = s.q.trim().toLowerCase();
+  const list = db.tx.filter(t => ym(t.date) === s.month
+    && (s.jar === 'all' || (s.jar === 'in' ? t.type === 'in' : delta(t, s.jar) !== 0 && t.type !== 'in'))
+    && (!q || (t.note || '').toLowerCase().includes(q)))
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.created || 0) - (a.created || 0));
+  const groups = {};
+  for (const t of list) (groups[t.date] ||= []).push(t);
+
+  $('#view-history').innerHTML = `
+    <div class="toolbar"><h1>Sổ ghi chép</h1>
+      <div class="month-nav"><button data-m="-1" aria-label="Tháng trước">‹</button><span>${monthLabel(s.month)}</span><button data-m="1" aria-label="Tháng sau">›</button></div></div>
+    <input class="search" type="search" placeholder="🔍 Tìm theo ghi chú…" value="${esc(s.q)}">
+    <div class="filters">
+      <button class="fchip ${s.jar === 'all' ? 'on' : ''}" data-f="all">Tất cả</button>
+      <button class="fchip ${s.jar === 'in' ? 'on' : ''}" data-f="in">💵 Thu nhập</button>
+      ${db.jars.map(j => `<button class="fchip ${s.jar === j.id ? 'on' : ''}" data-f="${j.id}">${j.emoji} ${esc(j.name)}</button>`).join('')}
+    </div>
+    <div id="histList">${list.length ? Object.entries(groups).map(([d, ts]) => {
+      const out = ts.filter(t => t.type === 'out').reduce((a, t) => a + t.amount, 0);
+      return `<div class="day"><div class="day-h"><span>${dayLabel(d)}</span><span class="num">${out ? '−' + money(out) : ''}</span></div>
+        <div class="txl">${ts.map(txLine).join('')}</div></div>`;
+    }).join('') : `<div class="empty-state"><div class="e">📭</div>Chưa có giao dịch nào${q ? ' khớp' : ' trong tháng này'}.</div>`}</div>
+  `;
+  const v = $('#view-history');
+  $$('[data-m]', v).forEach(b => b.onclick = () => { s.month = shiftMonth(s.month, +b.dataset.m); renderHistory(); });
+  $$('[data-f]', v).forEach(b => b.onclick = () => { s.jar = b.dataset.f; renderHistory(); });
+  const inp = $('.search', v);
+  inp.oninput = () => { s.q = inp.value; renderHistory(); const n = $('.search'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); };
+  $$('.tx', v).forEach(b => b.onclick = () => openSheet(db.tx.find(t => t.id === b.dataset.id)));
+}
+
+function renderStats() {
+  const key = statsMonth, ms = monthStats(key), bal = balances(key);
+  const saved = ms.income - ms.expense;
+  const rate = ms.income ? Math.round(saved / ms.income * 100) : null;
+
+  // 6 tháng gần nhất
+  const months = Array.from({ length: 6 }, (_, i) => shiftMonth(key, i - 5));
+  const series = months.map(m => { const s = monthStats(m); return { m, inc: s.income, exp: s.expense }; });
+  const max = Math.max(1, ...series.flatMap(s => [s.inc, s.exp]));
+  const W = 320, H = 150, padB = 20, padT = 8, bw = 14, gw = W / 6;
+  const yv = v => H - padB - (H - padB - padT) * v / max;
+  const ticks = [0, .5, 1].map(f => max * f);
+  const bars = series.map((s, i) => {
+    const x = gw * i + gw / 2;
+    const r = (val, dx, color, lbl) => {
+      const h = H - padB - yv(val); if (h <= 0) return '';
+      const y0 = yv(val), rr = Math.min(4, h);
+      return `<path d="M${x + dx} ${H - padB} V${y0 + rr} q0 -${rr} ${rr} -${rr} h${bw - 2 * rr} q${rr} 0 ${rr} ${rr} V${H - padB} z" fill="${color}"/>`;
+    };
+    return `<g class="bar-g" data-i="${i}">
+      <rect x="${gw * i}" y="0" width="${gw}" height="${H}" fill="transparent"/>
+      ${r(s.inc, -bw - 1, 'var(--good)')}${r(s.exp, 1, 'var(--bad)')}
+      <text class="axis" x="${x}" y="${H - 5}" text-anchor="middle" ${s.m === key ? 'style="font-weight:700;fill:var(--text)"' : ''}>T${+s.m.slice(5)}</text></g>`;
+  }).join('');
+  const grid = ticks.map(v => `<line class="grid" x1="0" x2="${W}" y1="${yv(v)}" y2="${yv(v)}"/><text class="axis" x="${W}" y="${yv(v) - 3}" text-anchor="end">${v ? short(v) : ''}</text>`).join('');
+
+  // Phân bổ chi tiêu theo lọ
+  const spentTotal = db.jars.reduce((a, j) => a + ms.jars[j.id].spent, 0);
+
+  $('#view-stats').innerHTML = `
+    <div class="toolbar"><h1>Thống kê</h1>
+      <div class="month-nav"><button data-m="-1" aria-label="Tháng trước">‹</button><span>${monthLabel(key)}</span><button data-m="1" aria-label="Tháng sau">›</button></div></div>
+    <div class="kpis">
+      <div class="kpi"><div class="l">Thu</div><div class="v num pos">${short(ms.income)}</div></div>
+      <div class="kpi"><div class="l">Chi</div><div class="v num neg">${short(ms.expense)}</div></div>
+      <div class="kpi"><div class="l">Để dành</div><div class="v num ${saved < 0 ? 'neg' : ''}">${rate === null ? '—' : rate + '%'}</div></div>
+    </div>
+
+    <h2>Ngân sách từng lọ trong tháng</h2>
+    <div class="card budget">${db.jars.map(j => {
+      const s = ms.jars[j.id];
+      const avail = Math.max(0, bal[j.id] + s.spent); // tồn đầu tháng + nạp trong tháng
+      const p = avail ? s.spent / avail : (s.spent ? 1 : 0);
+      const over = bal[j.id] < 0;
+      const warnUse = PROTECTED.has(j.id) && s.spent > 0;
+      return `<div class="brow ${over ? 'over' : ''}" style="--c:${jarColor(j.id)}">
+        <div class="bh"><span class="nm"><i></i>${j.emoji} ${esc(j.name)}</span><span class="num">${short(s.spent)} / ${short(avail)}</span></div>
+        <div class="track" role="progressbar" aria-valuenow="${Math.round(p * 100)}" aria-valuemin="0" aria-valuemax="100" aria-label="${esc(j.name)}"><b style="width:${Math.min(100, p * 100)}%"></b></div>
+        <div class="bs"><span>${over ? '⚠️ Vượt ' + short(-bal[j.id]) : warnUse ? '⚠️ Lọ này nên giữ, không tiêu' : 'Còn ' + short(bal[j.id])}</span><span>${Math.round(p * 100)}% đã dùng</span></div>
+      </div>`;
+    }).join('')}</div>
+
+    <h2>Chi tiêu theo lọ</h2>
+    <div class="card">${spentTotal ? `
+      <div class="bar-split" style="height:14px;margin:0">${db.jars.filter(j => ms.jars[j.id].spent).map(j => `<i style="flex:${ms.jars[j.id].spent};background:${jarColor(j.id)}" title="${esc(j.name)}: ${money(ms.jars[j.id].spent)}"></i>`).join('')}</div>
+      <table class="compare" style="margin-top:12px">
+        <thead><tr><th>Lọ</th><th>Đã chi</th><th>Tỉ trọng</th><th>Mục tiêu</th></tr></thead>
+        <tbody>${db.jars.map(j => {
+          const v = ms.jars[j.id].spent, share = Math.round(v / spentTotal * 100);
+          return `<tr><td><span class="legend" style="margin:0"><span><i style="background:${jarColor(j.id)}"></i>${esc(j.name)}</span></span></td>
+            <td class="num">${short(v)}</td><td class="num">${share}%</td><td class="num muted">${j.pct}%</td></tr>`;
+        }).join('')}</tbody></table>` : '<div class="muted">Chưa có chi tiêu trong tháng này.</div>'}
+    </div>
+
+    <h2>Thu & chi 6 tháng</h2>
+    <div class="card chart" id="trend">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Biểu đồ thu chi 6 tháng">${grid}${bars}</svg>
+      <div class="legend"><span><i style="background:var(--good)"></i>Thu</span><span><i style="background:var(--bad)"></i>Chi</span></div>
+      <div class="tip" id="trendTip"></div>
+    </div>
+  `;
+  const v = $('#view-stats');
+  $$('[data-m]', v).forEach(b => b.onclick = () => { statsMonth = shiftMonth(statsMonth, +b.dataset.m); renderStats(); });
+  const tip = $('#trendTip'), box = $('#trend');
+  $$('.bar-g', v).forEach(g => {
+    const showTip = () => {
+      const s = series[+g.dataset.i], r = g.getBoundingClientRect(), br = box.getBoundingClientRect();
+      tip.innerHTML = `<b>${monthLabel(s.m)}</b><br>Thu ${money(s.inc)}<br>Chi ${money(s.exp)}`;
+      tip.style.left = Math.min(Math.max(r.left - br.left + r.width / 2, 70), br.width - 70) + 'px';
+      tip.style.top = (r.top - br.top + 40) + 'px';
+      tip.classList.add('show');
+    };
+    g.addEventListener('pointerenter', showTip);
+    g.addEventListener('click', showTip);
+    g.addEventListener('pointerleave', () => tip.classList.remove('show'));
+  });
+}
+
+function renderSettings() {
+  const total = db.jars.reduce((a, j) => a + j.pct, 0);
+  $('#view-settings').innerHTML = `
+    <h1>Cài đặt</h1>
+    <h2>Tỉ lệ 6 chiếc lọ</h2>
+    <div class="card">
+      ${db.jars.map(j => `<div class="set-jar">
+        <span class="em">${j.emoji}</span>
+        <div><div class="nm">${esc(j.name)} <span class="muted">(${j.short})</span></div><div class="ds">${esc(j.desc)}</div></div>
+        <label class="pct"><input type="number" inputmode="numeric" min="0" max="100" value="${j.pct}" data-pct="${j.id}" aria-label="Tỉ lệ ${esc(j.name)}"><span>%</span></label>
+      </div>`).join('')}
+      <div class="pct-total ${total === 100 ? 'pos' : 'neg'}" id="pctTotal">Tổng: ${total}% ${total === 100 ? '✓' : '— cần đúng 100%'}</div>
+      <div class="btn-row" style="margin-top:10px"><button class="btn ghost" id="pctReset">Về mặc định 55-10-10-10-10-5</button></div>
+    </div>
+
+    <h2>Giao diện</h2>
+    <div class="card set-list"><div class="item"><span>Chế độ màu</span>
+      <select id="themeSel"><option value="auto">Theo hệ thống</option><option value="light">Sáng</option><option value="dark">Tối</option></select></div></div>
+
+    <h2>Dữ liệu</h2>
+    <div class="card">
+      <p class="muted" style="margin:0 0 10px;font-size:13.5px">${cloud.col ? `☁️ Dữ liệu được đồng bộ theo tài khoản claude.ai của bạn — mở link này trên máy khác là thấy ngay (${db.tx.length} giao dịch).` : `📱 Dữ liệu chỉ lưu trên trình duyệt của máy này (${db.tx.length} giao dịch).`} Vẫn nên sao lưu định kỳ.</p>
+      <div class="btn-row">
+        <button class="btn primary" id="exportJson">💾 Sao lưu (.json)</button>
+        <button class="btn ghost" id="importJson">📂 Khôi phục</button>
+        <button class="btn ghost" id="exportCsv">📄 Xuất CSV</button>
+        <button class="btn ghost danger" id="wipe">Xoá hết</button>
+      </div>
+      <input type="file" id="fileIn" accept="application/json,.json" hidden>
+    </div>
+
+    <h2>Quy tắc 6 chiếc lọ</h2>
+    <div class="card"><ul class="rules">
+      <li>Mỗi khoản thu nhập được chia ngay vào 6 lọ theo tỉ lệ.</li>
+      <li><b>FFA</b> (Tự do tài chính) và <b>LTSS</b> (Tiết kiệm dài hạn) chỉ nạp vào, không tiêu hằng ngày.</li>
+      <li><b>PLAY</b> nên tiêu hết mỗi tháng — để tự thưởng cho bản thân.</li>
+      <li>Lọ nào cạn thì dừng tiêu từ lọ đó, hoặc <b>chuyển lọ</b> có ý thức.</li>
+      <li>Mẹo: cài app ra màn hình chính (Chia sẻ → Thêm vào MH chính) để mở nhanh.</li>
+    </ul></div>
+    <p class="muted" style="text-align:center;font-size:12px;margin-top:20px">Sổ Thu Chi 6 Lọ · hoạt động offline</p>
+  `;
+  const v = $('#view-settings');
+  $$('[data-pct]', v).forEach(inp => inp.oninput = () => {
+    const j = jarById(inp.dataset.pct); j.pct = Math.max(0, Math.min(100, Math.round(+inp.value || 0)));
+    const t = db.jars.reduce((a, x) => a + x.pct, 0);
+    const el = $('#pctTotal'); el.className = 'pct-total ' + (t === 100 ? 'pos' : 'neg');
+    el.textContent = `Tổng: ${t}% ${t === 100 ? '✓' : '— cần đúng 100%'}`;
+    save();
+  });
+  $('#pctReset').onclick = () => { db.jars.forEach(j => j.pct = DEFAULT_JARS.find(d => d.id === j.id).pct); save(); renderSettings(); };
+  const ts = $('#themeSel'); ts.value = db.theme || 'auto';
+  ts.onchange = () => { db.theme = ts.value; save(); applyTheme(); };
+  $('#exportJson').onclick = async () => {
+    try { await download(`sothuchi-${today()}.json`, JSON.stringify({ app: 'sothuchi', version: 1, ...db }, null, 1), 'application/json'); }
+    catch (e) { return; }
+    db.lastBackup = Date.now(); save();
+  };
+  $('#exportCsv').onclick = () => {
+    const rows = [['Ngày', 'Loại', 'Số tiền', 'Lọ', 'Ghi chú']];
+    for (const t of [...db.tx].sort((a, b) => a.date.localeCompare(b.date))) {
+      const jar = t.type === 'out' ? jarById(t.jar)?.name : t.type === 'move' ? `${jarById(t.from)?.name} → ${jarById(t.to)?.name}` : 'Chia lọ';
+      rows.push([t.date, { in: 'Thu', out: 'Chi', move: 'Chuyển' }[t.type], t.amount, jar, t.note || '']);
+    }
+    download(`sothuchi-${today()}.csv`, '﻿' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n'), 'text/csv');
+  };
+  $('#importJson').onclick = () => $('#fileIn').click();
+  $('#fileIn').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const d = JSON.parse(await f.text());
+      if (!Array.isArray(d.tx)) throw 0;
+      if (!await ask(`Khôi phục ${d.tx.length} giao dịch? Dữ liệu hiện tại sẽ bị thay thế.`, 'Khôi phục')) return;
+      db.tx = d.tx;
+      for (const j of db.jars) { const p = d.jars?.find(x => x.id === j.id)?.pct; if (typeof p === 'number') j.pct = p; }
+      save(); applyTheme(); renderAll();
+      toast('Đã khôi phục dữ liệu');
+    } catch { toast('File không hợp lệ'); }
+    e.target.value = '';
+  };
+  $('#wipe').onclick = async () => {
+    if (!await ask('Xoá TOÀN BỘ giao dịch? Không thể hoàn tác.', 'Xoá hết')) return;
+    db.tx = []; save(); renderAll(); toast('Đã xoá dữ liệu');
+  };
+}
+
+async function download(name, text, type) {
+  const dl = window.claude?.use ? await window.claude.use('downloads').catch(() => null) : null;
+  if (dl) {
+    try { await dl.save({ filename: name, data: text }); }
+    catch (e) { if (e?.code !== 'declined') toast('Không tải xuống được file'); throw e; }
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function renderAll() {
+  renderHome();
+  if (view === 'history') renderHistory();
+  if (view === 'stats') renderStats();
+  if (view === 'settings') renderSettings();
+}
+
+function show(v) {
+  view = v;
+  $$('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
+  $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
+  renderAll();
+  window.scrollTo(0, 0);
+}
+
+/* ---------------- Sheet (thêm / sửa) ---------------- */
+const sh = { open: false, type: 'out', amt: '', jar: 'nec', inJar: 'nec', from: 'play', to: 'nec', editing: null };
+
+function jarButtons(el, sel, onPick, withBal) {
+  const bal = withBal ? balances() : null;
+  el.innerHTML = db.jars.map(j => `<button type="button" data-j="${j.id}" class="${j.id === sel ? 'on' : ''}" style="--c:${jarColor(j.id)}">
+    <span class="e">${j.emoji}</span>${j.short}${bal ? `<span class="b num">${short(bal[j.id])}</span>` : ''}</button>`).join('');
+  $$('button', el).forEach(b => b.onclick = () => onPick(b.dataset.j));
+}
+
+function openSheet(init = {}) {
+  const t = init.id ? init : null;
+  sh.editing = t;
+  sh.type = init.type || 'out';
+  sh.amt = t ? String(t.amount) : '';
+  const lastOut = [...db.tx].reverse().find(x => x.type === 'out');
+  sh.jar = init.jar || lastOut?.jar || 'nec';
+  if (t?.type === 'in') {
+    const ids = Object.keys(t.split).filter(k => t.split[k]);
+    $('#splitAll').checked = ids.length > 1;
+    sh.inJar = ids.length === 1 ? ids[0] : 'nec';
+  } else { $('#splitAll').checked = true; sh.inJar = 'nec'; }
+  if (t?.type === 'move') { sh.from = t.from; sh.to = t.to; }
+  $('#noteInput').value = t?.note || '';
+  $('#dateInput').value = t?.date || today();
+  $('#btnDelete').hidden = !t;
+  $('#btnSave').textContent = t ? 'Cập nhật' : 'Lưu';
+  $('#toast').hidden = true;
+  $('#backdrop').hidden = false; $('#sheet').hidden = false; sh.open = true;
+  document.body.style.overflow = 'hidden';
+  renderSheet();
+}
+function closeSheet() {
+  $('#backdrop').hidden = true; $('#sheet').hidden = true; sh.open = false;
+  document.body.style.overflow = '';
+  $('#noteInput').blur();
+}
+
+function renderSheet() {
+  const amount = +sh.amt || 0;
+  $$('#typeSeg button').forEach(b => b.classList.toggle('on', b.dataset.type === sh.type));
+  $('#amountText').textContent = nf.format(amount);
+  $('#amountBox').className = 'amount ' + (sh.type === 'move' ? '' : sh.type);
+  $('#paneOut').hidden = sh.type !== 'out';
+  $('#paneIn').hidden = sh.type !== 'in';
+  $('#paneMove').hidden = sh.type !== 'move';
+
+  const qa = sh.type === 'in' ? [1e6, 5e6, 10e6, 20e6] : [10e3, 20e3, 50e3, 100e3, 500e3];
+  $('#quickAmts').innerHTML = qa.map(v => `<button type="button" data-v="${v}">+${short(v)}</button>`).join('') +
+    (sh.amt ? `<button type="button" data-v="clear">Xoá</button>` : '');
+  $$('#quickAmts button').forEach(b => b.onclick = () => {
+    sh.amt = b.dataset.v === 'clear' ? '' : String(amount + +b.dataset.v); renderSheet();
+  });
+
+  if (sh.type === 'out') {
+    jarButtons($('#jarPick'), sh.jar, id => { sh.jar = id; renderSheet(); }, true);
+  } else if (sh.type === 'in') {
+    const all = $('#splitAll').checked;
+    $('#splitPreview').hidden = !all; $('#jarPickIn').hidden = all;
+    if (all) {
+      const sp = splitIncome(amount);
+      $('#splitPreview').innerHTML = db.jars.map(j => `<div style="--c:${jarColor(j.id)}">${j.emoji} ${j.short} · ${j.pct}%<b class="num">${short(sp[j.id])}</b></div>`).join('');
+    } else jarButtons($('#jarPickIn'), sh.inJar, id => { sh.inJar = id; renderSheet(); });
+  } else {
+    jarButtons($('#jarFrom'), sh.from, id => { sh.from = id; renderSheet(); }, true);
+    jarButtons($('#jarTo'), sh.to, id => { sh.to = id; renderSheet(); }, true);
+  }
+  renderChips();
+  const ok = amount > 0 && !(sh.type === 'move' && sh.from === sh.to) && !(sh.type === 'in' && $('#splitAll').checked && db.jars.reduce((a, j) => a + j.pct, 0) !== 100);
+  $('#btnSave').disabled = !ok; $('#btnSave').style.opacity = ok ? 1 : .45;
+  if (sh.type === 'out' && PROTECTED.has(sh.jar)) $('#btnSave').textContent = (sh.editing ? 'Cập nhật' : 'Lưu') + ' (lọ này nên để dành!)';
+  else $('#btnSave').textContent = sh.editing ? 'Cập nhật' : 'Lưu';
+}
+
+const DEFAULT_NOTES = {
+  out: ['Ăn sáng', 'Cà phê', 'Ăn trưa', 'Đi chợ', 'Xăng', 'Grab', 'Điện nước', 'Tiền nhà'],
+  in: ['Lương', 'Thưởng', 'Làm thêm', 'Lãi đầu tư', 'Được cho'],
+  move: ['Cân đối lọ'],
+};
+function renderChips() {
+  const idx = noteIndex(sh.type), q = $('#noteInput').value.trim().toLowerCase();
+  let items = [...idx.values()];
+  if (q) items = items.filter(e => e.note.toLowerCase().includes(q) && e.note.toLowerCase() !== q);
+  else if (sh.type === 'out') items.sort((a, b) => ((b.jar === sh.jar) - (a.jar === sh.jar)) || b.count - a.count);
+  else items.sort((a, b) => b.count - a.count);
+  let notes = items.slice(0, 10).map(e => e.note);
+  if (!q && notes.length < 6) notes = notes.concat(DEFAULT_NOTES[sh.type].filter(n => !idx.has(n.toLowerCase()))).slice(0, 10);
+  $('#noteChips').innerHTML = notes.map(n => `<button type="button">${esc(n)}</button>`).join('');
+  $$('#noteChips button').forEach((b, i) => b.onclick = () => { $('#noteInput').value = notes[i]; applyNote(true); });
+}
+/* Ghi chú quen → tự chọn lọ & gợi ý số tiền */
+function applyNote(fromChip) {
+  const e = noteIndex(sh.type).get($('#noteInput').value.trim().toLowerCase());
+  if (e) {
+    if (sh.type === 'out' && e.jar) sh.jar = e.jar;
+    if (fromChip && !sh.amt && e.amount) sh.amt = String(e.amount);
+  }
+  renderSheet();
+}
+
+function saveSheet() {
+  const amount = +sh.amt || 0;
+  if (!amount) return;
+  const base = { amount, note: $('#noteInput').value.trim(), date: $('#dateInput').value || today(), type: sh.type };
+  if (sh.type === 'out') base.jar = sh.jar;
+  if (sh.type === 'in') base.split = $('#splitAll').checked ? splitIncome(amount) : { [sh.inJar]: amount };
+  if (sh.type === 'move') { if (sh.from === sh.to) return; base.from = sh.from; base.to = sh.to; }
+
+  if (sh.editing) {
+    const i = db.tx.findIndex(t => t.id === sh.editing.id);
+    db.tx[i] = { id: sh.editing.id, created: sh.editing.created, ...base };
+    save(); renderAll(); closeSheet(); toast('Đã cập nhật');
+    return;
+  }
+  closeSheet();
+  const label = sh.type === 'out' ? `Đã ghi chi ${short(amount)} từ ${jarById(sh.jar).name}`
+    : sh.type === 'in' ? `+${short(amount)} đã ${$('#splitAll').checked ? 'chia vào 6 lọ' : 'vào ' + jarById(sh.inJar).name}`
+    : `Đã chuyển ${short(amount)}`;
+  undoableAdd(base, label);
+  if (sh.type === 'out') {
+    const b = balances()[sh.jar];
+    if (b < 0) setTimeout(() => toast(`⚠️ Lọ ${jarById(sh.jar).name} đã âm ${short(-b)}`), 5100);
+  }
+}
+
+function deleteEditing() {
+  const t = sh.editing; if (!t) return;
+  db.tx = db.tx.filter(x => x.id !== t.id); save(); closeSheet(); renderAll();
+  toast('Đã xoá giao dịch', 'Hoàn tác', () => { db.tx.push(t); save(); renderAll(); });
+}
+
+function keyIn(k) {
+  if (k === 'del') sh.amt = sh.amt.slice(0, -1);
+  else if ((sh.amt + k).length <= 13) sh.amt = (sh.amt + k).replace(/^0+/, '');
+  renderSheet();
+}
+
+/* ---------------- Theme ---------------- */
+function applyTheme() {
+  const t = db.theme || 'auto';
+  if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', t);
+}
+
+/* ---------------- Wire up ---------------- */
+function init() {
+  applyTheme();
+  $$('.tab').forEach(t => t.onclick = () => show(t.dataset.view));
+  $('#fab').onclick = () => openSheet();
+  $('#backdrop').onclick = closeSheet;
+  $$('#typeSeg button').forEach(b => b.onclick = () => { sh.type = b.dataset.type; renderSheet(); });
+  $$('#keypad button').forEach(b => b.onclick = () => keyIn(b.dataset.k || b.textContent));
+  $('#splitAll').onchange = renderSheet;
+  $('#noteInput').oninput = () => applyNote(false);
+  $('#noteInput').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('#noteInput').blur(); } };
+  $('#btnSave').onclick = saveSheet;
+  $('#btnDelete').onclick = deleteEditing;
+
+  // Kéo thanh trên xuống để đóng sheet
+  let y0 = null;
+  $('.grab').addEventListener('pointerdown', e => (y0 = e.clientY));
+  window.addEventListener('pointerup', e => { if (y0 !== null && e.clientY - y0 > 60) closeSheet(); y0 = null; });
+
+  // Bàn phím trên máy tính
+  document.addEventListener('keydown', e => {
+    const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName);
+    if (!sh.open) {
+      if (!typing && (e.key === 'n' || e.key === '+')) { e.preventDefault(); openSheet(); }
+      return;
+    }
+    if (e.key === 'Escape') return closeSheet();
+    if (typing) return;
+    if (/^\d$/.test(e.key)) keyIn(e.key);
+    else if (e.key === 'Backspace') keyIn('del');
+    else if (e.key === 'k') keyIn('000');
+    else if (e.key === 'Enter') saveSheet();
+  });
+
+  // Mở app từ shortcut ?add=out|in
+  const p = new URLSearchParams(location.search).get('add');
+  renderAll();
+  if (p) openSheet({ type: p });
+
+  initCloud();
+  if (!window.claude && 'serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+  // Làm mới khi quay lại app qua ngày mới
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) renderAll(); });
+}
+init();
+
+</script>
