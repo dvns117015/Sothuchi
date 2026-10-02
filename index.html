@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sổ Thu Chi 6 Lọ</title>
+  <meta name="description" content="Quản lý thu nhập, chi tiêu theo quy tắc 6 chiếc lọ">
+  <meta name="theme-color" content="#2a78d6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="6 Lọ">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app">
+    <section id="view-home" class="view active" aria-label="Tổng quan"></section>
+    <section id="view-history" class="view" aria-label="Lịch sử"></section>
+    <section id="view-stats" class="view" aria-label="Thống kê"></section>
+    <section id="view-settings" class="view" aria-label="Cài đặt"></section>
+  </main>
+
+  <nav class="tabbar" aria-label="Điều hướng">
+    <button class="tab active" data-view="home"><span class="ti">🏺</span><span>Lọ</span></button>
+    <button class="tab" data-view="history"><span class="ti">📒</span><span>Sổ</span></button>
+    <button class="fab" id="fab" aria-label="Ghi giao dịch">＋</button>
+    <button class="tab" data-view="stats"><span class="ti">📊</span><span>Thống kê</span></button>
+    <button class="tab" data-view="settings"><span class="ti">⚙️</span><span>Cài đặt</span></button>
+  </nav>
+
+  <!-- Bottom sheet: thêm / sửa giao dịch -->
+  <div class="backdrop" id="backdrop" hidden></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Ghi giao dịch" hidden>
+    <div class="grab"></div>
+    <div class="seg" id="typeSeg">
+      <button data-type="out" class="on">Chi tiêu</button>
+      <button data-type="in">Thu nhập</button>
+      <button data-type="move">Chuyển lọ</button>
+    </div>
+
+    <div class="amount" id="amountBox">
+      <span id="amountText">0</span><span class="cur">đ</span>
+    </div>
+    <div class="quick-amts" id="quickAmts"></div>
+
+    <div id="paneOut" class="pane">
+      <div class="jar-pick" id="jarPick"></div>
+    </div>
+    <div id="paneIn" class="pane" hidden>
+      <label class="switch"><input type="checkbox" id="splitAll" checked> <span>Tự chia vào 6 lọ theo tỉ lệ</span></label>
+      <div id="splitPreview" class="split-preview"></div>
+      <div class="jar-pick" id="jarPickIn" hidden></div>
+    </div>
+    <div id="paneMove" class="pane" hidden>
+      <div class="move-row"><span>Từ</span><div class="jar-pick small" id="jarFrom"></div></div>
+      <div class="move-row"><span>Sang</span><div class="jar-pick small" id="jarTo"></div></div>
+    </div>
+
+    <div class="note-row">
+      <input id="noteInput" type="text" placeholder="Ghi chú (vd: cà phê, lương…)" autocomplete="off" enterkeyhint="done">
+      <input id="dateInput" type="date" aria-label="Ngày">
+    </div>
+    <div class="chips" id="noteChips"></div>
+
+    <div class="keypad" id="keypad">
+      <button>1</button><button>2</button><button>3</button>
+      <button>4</button><button>5</button><button>6</button>
+      <button>7</button><button>8</button><button>9</button>
+      <button>000</button><button>0</button><button data-k="del" aria-label="Xoá">⌫</button>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn ghost danger" id="btnDelete" hidden>Xoá</button>
+      <button class="btn primary" id="btnSave">Lưu</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
